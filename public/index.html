@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loja de Instrumentos</title>
+    <link rel="preconnect" href="https://images.unsplash.com">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="/">
+            <span class="brand-mark">LI</span>
+            <span>Loja Instrumentos</span>
+        </a>
+
+        <nav class="nav">
+            <a href="#catalogo">Catalogo</a>
+            <a href="#frete">Frete</a>
+            <a href="#carrinho">Carrinho</a>
+            <a href="#gestao">Gestao</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-content">
+                <p class="eyebrow">Cordas, teclas, sopros e percussao</p>
+                <h1>Loja de Instrumentos</h1>
+                <p class="hero-text">Escolha seu instrumento, consulte o frete pelo CEP e acompanhe a compra com estoque protegido.</p>
+
+                <form class="search-panel" id="searchForm">
+                    <label>
+                        Nome
+                        <input id="filterName" type="search" placeholder="Violao, guitarra, teclado">
+                    </label>
+
+                    <label>
+                        Categoria
+                        <input id="filterCategory" type="search" placeholder="Cordas, percussao">
+                    </label>
+
+                    <label>
+                        Marca
+                        <input id="filterBrand" type="search" placeholder="Yamaha, Tagima">
+                    </label>
+
+                    <label>
+                        Preco max.
+                        <input id="filterPrice" type="number" min="0" step="0.01" placeholder="1500">
+                    </label>
+
+                    <button type="submit">Buscar</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="section catalog-section" id="catalogo">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Produtos</p>
+                    <h2>Catalogo</h2>
+                </div>
+                <button class="ghost-button" id="reloadProducts" type="button">Atualizar</button>
+            </div>
+
+            <div class="product-grid" id="productGrid">
+                <article class="loading-card">Carregando produtos...</article>
+            </div>
+        </section>
+
+        <section class="checkout-band">
+            <div class="freight-card" id="frete">
+                <div>
+                    <p class="eyebrow">Entrega</p>
+                    <h2>Calcular Frete</h2>
+                </div>
+
+                <form id="freightForm" class="freight-form">
+                    <input id="cepInput" type="text" inputmode="numeric" maxlength="9" placeholder="01001-000">
+                    <button type="submit">Calcular</button>
+                </form>
+
+                <div class="freight-result" id="freightResult">Informe um CEP para consultar o ViaCEP.</div>
+            </div>
+
+            <aside class="cart-card" id="carrinho">
+                <div>
+                    <p class="eyebrow">Resumo</p>
+                    <h2>Carrinho</h2>
+                </div>
+
+                <div class="cart-empty" id="cartEmpty">Nenhum produto selecionado.</div>
+                <div class="cart-items" id="cartItems"></div>
+                <div class="cart-total" id="cartTotal">Total: R$ 0,00</div>
+            </aside>
+        </section>
+
+        <section class="section management-section" id="gestao">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Administrativo</p>
+                    <h2>Gerenciar Loja</h2>
+                </div>
+                <span class="session-pill" id="sessionStatus">Sem login</span>
+            </div>
+
+            <div class="management-grid">
+                <article class="admin-card">
+                    <p class="eyebrow">Acesso</p>
+                    <h3>Entrar</h3>
+                    <form class="admin-form" id="loginForm">
+                        <input id="loginEmail" type="email" placeholder="email@loja.com" required>
+                        <input id="loginPassword" type="password" placeholder="Senha" required>
+                        <button type="submit">Entrar</button>
+                    </form>
+                    <button class="ghost-button full-button" id="logoutButton" type="button">Sair</button>
+                    <div class="admin-message" id="loginMessage">Use um usuario cadastrado para liberar usuarios e vendas.</div>
+                </article>
+
+                <article class="admin-card">
+                    <p class="eyebrow">Usuarios</p>
+                    <h3>Novo acesso</h3>
+                    <form class="admin-form" id="userForm">
+                        <input id="userName" type="text" placeholder="Nome" required>
+                        <input id="userEmail" type="email" placeholder="Email" required>
+                        <input id="userPassword" type="password" placeholder="Senha" required>
+                        <select id="userType" required>
+                            <option value="cliente">Cliente</option>
+                            <option value="admin">Admin</option>
+                            <option value="funcionario">Funcionario</option>
+                        </select>
+                        <button type="submit">Cadastrar</button>
+                    </form>
+                    <div class="admin-message" id="userMessage">Cadastre clientes, admins ou funcionarios.</div>
+                </article>
+            </div>
+
+            <div class="admin-panel">
+                <div class="panel-head">
+                    <div>
+                        <p class="eyebrow">Controle</p>
+                        <h3>Acessos cadastrados</h3>
+                    </div>
+                    <button class="ghost-button" id="loadUsersButton" type="button">Carregar usuarios</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable">
+                            <tr><td colspan="4">Entre e carregue os usuarios.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-panel">
+                <div class="panel-head">
+                    <div>
+                        <p class="eyebrow">Vendas</p>
+                        <h3>Pedidos e aprovacao</h3>
+                    </div>
+                    <button class="ghost-button" id="loadSalesButton" type="button">Carregar vendas</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Produto</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Acoes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesTable">
+                            <tr><td colspan="6">Entre e carregue as vendas.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/app.js"></script>
+</body>
+</html>

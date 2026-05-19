@@ -207,15 +207,26 @@ router.delete('/categorias/:id', instrumentosMidd, (req, res) => {
 });
 
 router.get('/instrumentos', instrumentosControllers.listar.bind(instrumentosControllers));
+router.get('/instrumentos/buscar', instrumentosControllers.buscarProdutos.bind(instrumentosControllers));
+router.get('/instrumentos/frete/:cep', instrumentosControllers.calcularFrete.bind(instrumentosControllers));
+router.post('/instrumentos/:id/comprar', instrumentosMidd, instrumentosControllers.comprarProduto.bind(instrumentosControllers));
 router.get('/instrumentos/:id', instrumentosControllers.buscarPorId.bind(instrumentosControllers));
 router.post('/instrumentos', instrumentosMidd, instrumentosControllers.criar.bind(instrumentosControllers));
 router.put('/instrumentos/:id', instrumentosMidd, instrumentosControllers.atualizar.bind(instrumentosControllers));
 router.delete('/instrumentos/:id', instrumentosMidd, instrumentosControllers.deletar.bind(instrumentosControllers));
 
 router.get('/produtos', instrumentosControllers.listar.bind(instrumentosControllers));
+router.get('/produtos/buscar', instrumentosControllers.buscarProdutos.bind(instrumentosControllers));
+router.get('/produtos/frete/:cep', instrumentosControllers.calcularFrete.bind(instrumentosControllers));
+router.post('/produtos/:id/comprar', instrumentosMidd, instrumentosControllers.comprarProduto.bind(instrumentosControllers));
 router.get('/produtos/:id', instrumentosControllers.buscarPorId.bind(instrumentosControllers));
 router.post('/produtos', instrumentosMidd, instrumentosControllers.criar.bind(instrumentosControllers));
 router.put('/produtos/:id', instrumentosMidd, instrumentosControllers.atualizar.bind(instrumentosControllers));
 router.delete('/produtos/:id', instrumentosMidd, instrumentosControllers.deletar.bind(instrumentosControllers));
+
+router.get('/compras', instrumentosMidd, instrumentosControllers.listarCompras.bind(instrumentosControllers));
+router.put('/compras/:id/aprovar', instrumentosMidd, instrumentosControllers.aprovarCompra.bind(instrumentosControllers));
+router.put('/compras/:id/reprovar', instrumentosMidd, instrumentosControllers.reprovarCompra.bind(instrumentosControllers));
+router.post('/emails/teste', instrumentosMidd, instrumentosControllers.enviarEmailTeste.bind(instrumentosControllers));
 
 module.exports = router;
