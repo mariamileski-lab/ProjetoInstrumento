@@ -15,9 +15,9 @@
         </a>
 
         <nav class="nav">
-            <a href="#catalogo">Catalogo</a>
-            <a href="#frete">Frete</a>
-            <a href="#carrinho">Carrinho</a>
+            <a href="#catalogo" data-admin-only>Catalogo</a>
+            <a href="#frete" data-admin-only>Frete</a>
+            <a href="#carrinho" data-admin-only>Carrinho</a>
             <a href="#gestao">Gestao</a>
         </nav>
     </header>
@@ -29,7 +29,7 @@
                 <h1>Loja de Instrumentos</h1>
                 <p class="hero-text">Escolha seu instrumento, consulte o frete pelo CEP e acompanhe a compra com estoque protegido.</p>
 
-                <form class="search-panel" id="searchForm">
+                <form class="search-panel" id="searchForm" data-admin-only>
                     <label>
                         Nome
                         <input id="filterName" type="search" placeholder="Violao, guitarra, teclado">
@@ -55,7 +55,7 @@
             </div>
         </section>
 
-        <section class="section catalog-section" id="catalogo">
+        <section class="section catalog-section" id="catalogo" data-admin-only>
             <div class="section-heading">
                 <div>
                     <p class="eyebrow">Produtos</p>
@@ -69,7 +69,7 @@
             </div>
         </section>
 
-        <section class="checkout-band">
+        <section class="checkout-band" data-admin-only>
             <div class="freight-card" id="frete">
                 <div>
                     <p class="eyebrow">Entrega</p>
@@ -93,6 +93,8 @@
                 <div class="cart-empty" id="cartEmpty">Nenhum produto selecionado.</div>
                 <div class="cart-items" id="cartItems"></div>
                 <div class="cart-total" id="cartTotal">Total: R$ 0,00</div>
+                <button class="checkout-button" id="checkoutButton" type="button" disabled>Finalizar compra</button>
+                <div class="cart-message" id="cartMessage">Entre na conta para finalizar pedidos.</div>
             </aside>
         </section>
 
@@ -115,10 +117,10 @@
                         <button type="submit">Entrar</button>
                     </form>
                     <button class="ghost-button full-button" id="logoutButton" type="button">Sair</button>
-                    <div class="admin-message" id="loginMessage">Use um usuario cadastrado para liberar usuarios e vendas.</div>
+                    <div class="admin-message" id="loginMessage">Entre com um usuario admin para liberar as informacoes.</div>
                 </article>
 
-                <article class="admin-card">
+                <article class="admin-card" data-admin-only>
                     <p class="eyebrow">Usuarios</p>
                     <h3>Novo acesso</h3>
                     <form class="admin-form" id="userForm">
@@ -136,7 +138,7 @@
                 </article>
             </div>
 
-            <div class="admin-panel">
+            <div class="admin-panel" data-admin-only>
                 <div class="panel-head">
                     <div>
                         <p class="eyebrow">Controle</p>
@@ -161,7 +163,7 @@
                 </div>
             </div>
 
-            <div class="admin-panel">
+            <div class="admin-panel" data-admin-only>
                 <div class="panel-head">
                     <div>
                         <p class="eyebrow">Vendas</p>

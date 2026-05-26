@@ -5,17 +5,24 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 const connection = require('../config/database');
+const { jwtSecret } = require('../config/auth');
 const instrumentosControllers = require('../controllers/InstrumentosControllers');
 const instrumentosMidd = require('../middlewares/instrumentosMidd');
+const AppError = require('../errors/AppError');
+const {
+    validar,
+    usuario,
+    login,
+    categoria,
+    instrumento,
+    compra,
+    emailTeste,
+    idParam,
+    cepParam
+} = require('../middlewares/validations');
 
-router.post('/usuarios', async (req, res) => {
+router.post('/usuarios', validar(usuario), async (req, res, next) => {
     const { nome, email, senha, tipo_usuario } = req.body;
-
-    if (!nome || !email || !senha || !tipo_usuario) {
-        return res.status(400).json({
-            message: 'Nome, email, senha e tipo_usuario sao obrigatorios'
-        });
-    }
 
     try {
         const senhaCriptografada = await bcrypt.hash(String(senha), 10);
@@ -28,14 +35,10 @@ router.post('/usuarios', async (req, res) => {
         connection.query(sql, [nome, email, senhaCriptografada, tipo_usuario], (err, result) => {
             if (err) {
                 if (err.code === 'ER_DUP_ENTRY') {
-                    return res.status(409).json({
-                        message: 'Email ja cadastrado'
-                    });
+                    return next(new AppError('Email ja cadastrado', 409));
                 }
 
-                return res.status(500).json({
-                    message: 'Erro ao cadastrar usuario'
-                });
+                return next(new AppError('Erro ao cadastrar usuario', 500));
             }
 
             return res.status(201).json({
@@ -46,65 +49,48 @@ router.post('/usuarios', async (req, res) => {
             });
         });
     } catch (error) {
-        return res.status(500).json({
-            message: 'Erro interno do servidor'
-        });
+        return next(error);
     }
 });
 
-router.get('/usuarios', instrumentosMidd, (req, res) => {
+router.get('/usuarios', instrumentosMidd, (req, res, next) => {
     const sql = 'SELECT id_usuario, nome, email, tipo_usuario FROM usuarios ORDER BY id_usuario DESC';
 
     connection.query(sql, (err, results) => {
         if (err) {
-            return res.status(500).json({
-                message: 'Erro ao listar usuarios'
-            });
+            return next(new AppError('Erro ao listar usuarios', 500));
         }
 
         return res.status(200).json(results);
     });
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', validar(login), (req, res, next) => {
     const { email, senha } = req.body;
-
-    if (!email || !senha) {
-        return res.status(400).json({
-            message: 'Email e senha sao obrigatorios'
-        });
-    }
-
     const sql = 'SELECT * FROM usuarios WHERE email = ?';
 
     connection.query(sql, [email], async (err, results) => {
         if (err) {
-            return res.status(500).json({
-                message: 'Erro ao buscar usuario'
-            });
+            return next(new AppError('Erro ao buscar usuario', 500));
         }
 
         if (results.length === 0) {
-            return res.status(401).json({
-                message: 'Usuario nao encontrado'
-            });
+            return next(new AppError('Usuario nao encontrado', 401));
         }
 
-        const usuario = results[0];
-        const senhaValida = await bcrypt.compare(String(senha), usuario.senha);
+        const usuarioEncontrado = results[0];
+        const senhaValida = await bcrypt.compare(String(senha), usuarioEncontrado.senha);
 
         if (!senhaValida) {
-            return res.status(401).json({
-                message: 'Senha invalida'
-            });
+            return next(new AppError('Senha invalida', 401));
         }
 
         const token = jwt.sign(
             {
-                id: usuario.id_usuario,
-                tipo: usuario.tipo_usuario
+                id: usuarioEncontrado.id_usuario,
+                tipo: usuarioEncontrado.tipo_usuario
             },
-            'segredo',
+            jwtSecret,
             {
                 expiresIn: '1d'
             }
@@ -114,36 +100,25 @@ router.post('/login', (req, res) => {
     });
 });
 
-router.get('/categorias', (req, res) => {
+router.get('/categorias', (req, res, next) => {
     const sql = 'SELECT * FROM categorias ORDER BY id_categoria DESC';
 
     connection.query(sql, (err, results) => {
         if (err) {
-            return res.status(500).json({
-                message: 'Erro ao listar categorias'
-            });
+            return next(new AppError('Erro ao listar categorias', 500));
         }
 
         return res.status(200).json(results);
     });
 });
 
-router.post('/categorias', instrumentosMidd, (req, res) => {
+router.post('/categorias', instrumentosMidd, validar(categoria), (req, res, next) => {
     const { nome } = req.body;
-
-    if (!nome) {
-        return res.status(400).json({
-            message: 'Nome da categoria e obrigatorio'
-        });
-    }
-
     const sql = 'INSERT INTO categorias (nome) VALUES (?)';
 
     connection.query(sql, [nome], (err, result) => {
         if (err) {
-            return res.status(500).json({
-                message: 'Erro ao cadastrar categoria'
-            });
+            return next(new AppError('Erro ao cadastrar categoria', 500));
         }
 
         return res.status(201).json({
@@ -153,28 +128,17 @@ router.post('/categorias', instrumentosMidd, (req, res) => {
     });
 });
 
-router.put('/categorias/:id', instrumentosMidd, (req, res) => {
+router.put('/categorias/:id', instrumentosMidd, validar(idParam), validar(categoria), (req, res, next) => {
     const { nome } = req.body;
-
-    if (!nome) {
-        return res.status(400).json({
-            message: 'Nome da categoria e obrigatorio'
-        });
-    }
-
     const sql = 'UPDATE categorias SET nome = ? WHERE id_categoria = ?';
 
     connection.query(sql, [nome, req.params.id], (err, result) => {
         if (err) {
-            return res.status(500).json({
-                message: 'Erro ao atualizar categoria'
-            });
+            return next(new AppError('Erro ao atualizar categoria', 500));
         }
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({
-                message: 'Categoria nao encontrada'
-            });
+            return next(new AppError('Categoria nao encontrada', 404));
         }
 
         return res.status(200).json({
@@ -184,20 +148,16 @@ router.put('/categorias/:id', instrumentosMidd, (req, res) => {
     });
 });
 
-router.delete('/categorias/:id', instrumentosMidd, (req, res) => {
+router.delete('/categorias/:id', instrumentosMidd, validar(idParam), (req, res, next) => {
     const sql = 'DELETE FROM categorias WHERE id_categoria = ?';
 
     connection.query(sql, [req.params.id], (err, result) => {
         if (err) {
-            return res.status(500).json({
-                message: 'Erro ao deletar categoria'
-            });
+            return next(new AppError('Erro ao deletar categoria', 500));
         }
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({
-                message: 'Categoria nao encontrada'
-            });
+            return next(new AppError('Categoria nao encontrada', 404));
         }
 
         return res.status(200).json({
@@ -208,25 +168,25 @@ router.delete('/categorias/:id', instrumentosMidd, (req, res) => {
 
 router.get('/instrumentos', instrumentosControllers.listar.bind(instrumentosControllers));
 router.get('/instrumentos/buscar', instrumentosControllers.buscarProdutos.bind(instrumentosControllers));
-router.get('/instrumentos/frete/:cep', instrumentosControllers.calcularFrete.bind(instrumentosControllers));
-router.post('/instrumentos/:id/comprar', instrumentosMidd, instrumentosControllers.comprarProduto.bind(instrumentosControllers));
-router.get('/instrumentos/:id', instrumentosControllers.buscarPorId.bind(instrumentosControllers));
-router.post('/instrumentos', instrumentosMidd, instrumentosControllers.criar.bind(instrumentosControllers));
-router.put('/instrumentos/:id', instrumentosMidd, instrumentosControllers.atualizar.bind(instrumentosControllers));
-router.delete('/instrumentos/:id', instrumentosMidd, instrumentosControllers.deletar.bind(instrumentosControllers));
+router.get('/instrumentos/frete/:cep', validar(cepParam), instrumentosControllers.calcularFrete.bind(instrumentosControllers));
+router.post('/instrumentos/:id/comprar', instrumentosMidd, validar(idParam), validar(compra), instrumentosControllers.comprarProduto.bind(instrumentosControllers));
+router.get('/instrumentos/:id', validar(idParam), instrumentosControllers.buscarPorId.bind(instrumentosControllers));
+router.post('/instrumentos', instrumentosMidd, validar(instrumento), instrumentosControllers.criar.bind(instrumentosControllers));
+router.put('/instrumentos/:id', instrumentosMidd, validar(idParam), validar(instrumento), instrumentosControllers.atualizar.bind(instrumentosControllers));
+router.delete('/instrumentos/:id', instrumentosMidd, validar(idParam), instrumentosControllers.deletar.bind(instrumentosControllers));
 
 router.get('/produtos', instrumentosControllers.listar.bind(instrumentosControllers));
 router.get('/produtos/buscar', instrumentosControllers.buscarProdutos.bind(instrumentosControllers));
-router.get('/produtos/frete/:cep', instrumentosControllers.calcularFrete.bind(instrumentosControllers));
-router.post('/produtos/:id/comprar', instrumentosMidd, instrumentosControllers.comprarProduto.bind(instrumentosControllers));
-router.get('/produtos/:id', instrumentosControllers.buscarPorId.bind(instrumentosControllers));
-router.post('/produtos', instrumentosMidd, instrumentosControllers.criar.bind(instrumentosControllers));
-router.put('/produtos/:id', instrumentosMidd, instrumentosControllers.atualizar.bind(instrumentosControllers));
-router.delete('/produtos/:id', instrumentosMidd, instrumentosControllers.deletar.bind(instrumentosControllers));
+router.get('/produtos/frete/:cep', validar(cepParam), instrumentosControllers.calcularFrete.bind(instrumentosControllers));
+router.post('/produtos/:id/comprar', instrumentosMidd, validar(idParam), validar(compra), instrumentosControllers.comprarProduto.bind(instrumentosControllers));
+router.get('/produtos/:id', validar(idParam), instrumentosControllers.buscarPorId.bind(instrumentosControllers));
+router.post('/produtos', instrumentosMidd, validar(instrumento), instrumentosControllers.criar.bind(instrumentosControllers));
+router.put('/produtos/:id', instrumentosMidd, validar(idParam), validar(instrumento), instrumentosControllers.atualizar.bind(instrumentosControllers));
+router.delete('/produtos/:id', instrumentosMidd, validar(idParam), instrumentosControllers.deletar.bind(instrumentosControllers));
 
 router.get('/compras', instrumentosMidd, instrumentosControllers.listarCompras.bind(instrumentosControllers));
-router.put('/compras/:id/aprovar', instrumentosMidd, instrumentosControllers.aprovarCompra.bind(instrumentosControllers));
-router.put('/compras/:id/reprovar', instrumentosMidd, instrumentosControllers.reprovarCompra.bind(instrumentosControllers));
-router.post('/emails/teste', instrumentosMidd, instrumentosControllers.enviarEmailTeste.bind(instrumentosControllers));
+router.put('/compras/:id/aprovar', instrumentosMidd, validar(idParam), instrumentosControllers.aprovarCompra.bind(instrumentosControllers));
+router.put('/compras/:id/reprovar', instrumentosMidd, validar(idParam), instrumentosControllers.reprovarCompra.bind(instrumentosControllers));
+router.post('/emails/teste', instrumentosMidd, validar(emailTeste), instrumentosControllers.enviarEmailTeste.bind(instrumentosControllers));
 
 module.exports = router;

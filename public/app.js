@@ -6,6 +6,8 @@ const freightResult = document.getElementById('freightResult');
 const cartItems = document.getElementById('cartItems');
 const cartEmpty = document.getElementById('cartEmpty');
 const cartTotal = document.getElementById('cartTotal');
+const checkoutButton = document.getElementById('checkoutButton');
+const cartMessage = document.getElementById('cartMessage');
 const loginForm = document.getElementById('loginForm');
 const userForm = document.getElementById('userForm');
 const logoutButton = document.getElementById('logoutButton');
@@ -19,8 +21,35 @@ const salesTable = document.getElementById('salesTable');
 
 const fallbackImages = [
     'https://images.unsplash.com/photo-1516924962500-2b4b3b99ea02?auto=format&fit=crop&w=900&q=80',
-    'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?auto=format&fit=crop&w=900&q=80',
-    'https://images.unsplash.com/photo-1552422535-c45813c61732?auto=format&fit=crop&w=900&q=80'
+    'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?auto=format&fit=crop&w=900&q=80'
+];
+
+const instrumentImages = [
+    {
+        terms: ['teclado', 'piano', 'tecla', 'sintetizador', 'keyboard'],
+        url: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?auto=format&fit=crop&w=900&q=80'
+    },
+    {
+        terms: ['guitarra', 'stratocaster', 'telecaster', 'les paul'],
+        url: 'https://images.unsplash.com/photo-1516924962500-2b4b3b99ea02?auto=format&fit=crop&w=900&q=80'
+    },
+    {
+        terms: ['violao', 'violão', 'acustico', 'acústico'],
+        url: 'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?auto=format&fit=crop&w=900&q=80'
+    },
+    {
+        terms: ['baixo'],
+        url: 'https://images.unsplash.com/photo-1541992007413-9b45587b1da2?auto=format&fit=crop&w=900&q=80'
+    },
+    {
+        terms: ['bateria', 'percussao', 'percussão', 'tambor'],
+        url: 'https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?auto=format&fit=crop&w=900&q=80'
+    },
+    {
+        terms: ['sax', 'saxofone', 'trompete', 'flauta', 'sopro'],
+        url: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?auto=format&fit=crop&w=900&q=80'
+    }
 ];
 
 const sampleProducts = [
@@ -56,6 +85,39 @@ const sampleProducts = [
 let cart = [];
 let token = localStorage.getItem('lojaToken') || '';
 
+function getErrorMessage(data, fallback) {
+    return data?.error?.message || data?.message || fallback;
+}
+
+function getTokenPayload() {
+    if (!token) {
+        return null;
+    }
+
+    try {
+        const payload = token.split('.')[1];
+        const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+
+        return JSON.parse(atob(normalized));
+    } catch (error) {
+        return null;
+    }
+}
+
+function isAdminLogged() {
+    const payload = getTokenPayload();
+
+    return payload?.tipo === 'admin';
+}
+
+function clearProtectedData() {
+    productGrid.innerHTML = '<article class="loading-card">Entre como admin para visualizar os produtos.</article>';
+    usersTable.innerHTML = '<tr><td colspan="4">Entre como admin para carregar os usuarios.</td></tr>';
+    salesTable.innerHTML = '<tr><td colspan="6">Entre como admin para carregar as vendas.</td></tr>';
+    cart = [];
+    renderCart();
+}
+
 function formatCurrency(value) {
     return Number(value || 0).toLocaleString('pt-BR', {
         style: 'currency',
@@ -66,6 +128,21 @@ function formatCurrency(value) {
 function productImage(product, index) {
     if (product.imagem) {
         return product.imagem;
+    }
+
+    const searchableText = [
+        product.nome,
+        product.descricao,
+        product.categoria,
+        product.marca
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    const matchedImage = instrumentImages.find((image) =>
+        image.terms.some((term) => searchableText.includes(term))
+    );
+
+    if (matchedImage) {
+        return matchedImage.url;
     }
 
     return fallbackImages[index % fallbackImages.length];
@@ -166,6 +243,7 @@ function renderCart() {
 
     const total = cart.reduce((sum, item) => sum + Number(item.preco || 0) * item.quantidade, 0);
     cartTotal.textContent = `Total: ${formatCurrency(total)}`;
+    checkoutButton.disabled = cart.length === 0;
 }
 
 function authHeaders() {
@@ -176,14 +254,18 @@ function authHeaders() {
 }
 
 function updateSessionStatus() {
-    if (token) {
-        sessionStatus.textContent = 'Login ativo';
+    if (isAdminLogged()) {
+        document.body.classList.add('admin-logged');
+        sessionStatus.textContent = 'Admin logado';
         sessionStatus.classList.add('active');
+        cartMessage.textContent = cart.length ? 'Pronto para finalizar a compra.' : 'Adicione produtos ao carrinho.';
         return;
     }
 
+    document.body.classList.remove('admin-logged');
     sessionStatus.textContent = 'Sem login';
     sessionStatus.classList.remove('active');
+    cartMessage.textContent = 'Entre como admin para visualizar e finalizar pedidos.';
 }
 
 function renderUsers(users) {
@@ -237,8 +319,8 @@ function renderSales(sales) {
 }
 
 async function loadUsers() {
-    if (!token) {
-        usersTable.innerHTML = '<tr><td colspan="4">Faca login para carregar usuarios.</td></tr>';
+    if (!isAdminLogged()) {
+        usersTable.innerHTML = '<tr><td colspan="4">Entre como admin para carregar usuarios.</td></tr>';
         return;
     }
 
@@ -251,7 +333,7 @@ async function loadUsers() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Erro ao carregar usuarios');
+            throw new Error(getErrorMessage(data, 'Erro ao carregar usuarios'));
         }
 
         renderUsers(data);
@@ -261,8 +343,8 @@ async function loadUsers() {
 }
 
 async function loadSales() {
-    if (!token) {
-        salesTable.innerHTML = '<tr><td colspan="6">Faca login para carregar vendas.</td></tr>';
+    if (!isAdminLogged()) {
+        salesTable.innerHTML = '<tr><td colspan="6">Entre como admin para carregar vendas.</td></tr>';
         return;
     }
 
@@ -275,7 +357,7 @@ async function loadSales() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Erro ao carregar vendas');
+            throw new Error(getErrorMessage(data, 'Erro ao carregar vendas'));
         }
 
         renderSales(data);
@@ -293,12 +375,58 @@ async function updateSaleStatus(id, action) {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Erro ao atualizar venda');
+            throw new Error(getErrorMessage(data, 'Erro ao atualizar venda'));
         }
 
         await loadSales();
     } catch (error) {
         salesTable.innerHTML = `<tr><td colspan="6">${error.message}</td></tr>`;
+    }
+}
+
+async function checkoutCart() {
+    if (!cart.length) {
+        cartMessage.textContent = 'Adicione pelo menos um produto ao carrinho.';
+        return;
+    }
+
+    if (!isAdminLogged()) {
+        cartMessage.textContent = 'Entre como admin antes de finalizar a compra.';
+        document.getElementById('gestao').scrollIntoView({ behavior: 'smooth' });
+        return;
+    }
+
+    const cep = document.getElementById('cepInput').value.replace(/\D/g, '');
+    const bodyCep = cep.length === 8 ? cep : undefined;
+
+    checkoutButton.disabled = true;
+    cartMessage.textContent = 'Finalizando compra...';
+
+    try {
+        for (const item of cart) {
+            const response = await fetch(`/produtos/${productId(item)}/comprar`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({
+                    quantidade: item.quantidade,
+                    ...(bodyCep ? { cep: bodyCep } : {})
+                })
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(getErrorMessage(data, 'Erro ao finalizar compra'));
+            }
+        }
+
+        cart = [];
+        renderCart();
+        cartMessage.textContent = 'Compra registrada com sucesso. Ela ja aparece em vendas.';
+        await Promise.all([loadProducts(), loadSales()]);
+        document.getElementById('gestao').scrollIntoView({ behavior: 'smooth' });
+    } catch (error) {
+        cartMessage.textContent = error.message;
+        checkoutButton.disabled = false;
     }
 }
 
@@ -332,7 +460,7 @@ freightForm.addEventListener('submit', async (event) => {
         const freight = await response.json();
 
         if (!response.ok) {
-            throw new Error(freight.message || 'Erro ao calcular frete');
+            throw new Error(getErrorMessage(freight, 'Erro ao calcular frete'));
         }
 
         freightResult.textContent = `${freight.logradouro || 'Endereco'} - ${freight.cidade}/${freight.uf}. Frete ${formatCurrency(freight.valor)} com prazo de ${freight.prazo_dias} dias.`;
@@ -359,14 +487,27 @@ loginForm.addEventListener('submit', async (event) => {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Erro ao fazer login');
+            throw new Error(getErrorMessage(data, 'Erro ao fazer login'));
+        }
+
+        if (!data.token) {
+            throw new Error('Token nao retornado pelo servidor');
         }
 
         token = data.token;
+
+        if (!isAdminLogged()) {
+            token = '';
+            localStorage.removeItem('lojaToken');
+            updateSessionStatus();
+            clearProtectedData();
+            throw new Error('Apenas usuarios admin podem visualizar as informacoes.');
+        }
+
         localStorage.setItem('lojaToken', token);
         updateSessionStatus();
-        loginMessage.textContent = 'Login realizado com sucesso.';
-        await Promise.all([loadUsers(), loadSales()]);
+        loginMessage.textContent = 'Admin logado com sucesso.';
+        await Promise.all([loadProducts(), loadUsers(), loadSales()]);
     } catch (error) {
         loginMessage.textContent = error.message;
     }
@@ -376,6 +517,7 @@ logoutButton.addEventListener('click', () => {
     token = '';
     localStorage.removeItem('lojaToken');
     updateSessionStatus();
+    clearProtectedData();
     loginMessage.textContent = 'Voce saiu da area administrativa.';
 });
 
@@ -399,7 +541,7 @@ userForm.addEventListener('submit', async (event) => {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Erro ao cadastrar usuario');
+            throw new Error(getErrorMessage(data, 'Erro ao cadastrar usuario'));
         }
 
         userForm.reset();
@@ -412,6 +554,16 @@ userForm.addEventListener('submit', async (event) => {
 
 loadUsersButton.addEventListener('click', loadUsers);
 loadSalesButton.addEventListener('click', loadSales);
+checkoutButton.addEventListener('click', checkoutCart);
 
 updateSessionStatus();
-loadProducts();
+if (isAdminLogged()) {
+    loadProducts();
+    loadUsers();
+    loadSales();
+} else {
+    token = '';
+    localStorage.removeItem('lojaToken');
+    updateSessionStatus();
+    clearProtectedData();
+}

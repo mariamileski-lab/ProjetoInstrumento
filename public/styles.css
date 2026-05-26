@@ -26,6 +26,10 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
+body:not(.admin-logged) [data-admin-only] {
+    display: none !important;
+}
+
 button,
 input,
 select {
@@ -168,6 +172,7 @@ select:focus {
 .search-panel button,
 .freight-form button,
 .product-card button,
+.checkout-button,
 .ghost-button {
     min-height: 44px;
     border: 0;
@@ -180,8 +185,15 @@ select:focus {
 
 .search-panel button:hover,
 .freight-form button:hover,
-.product-card button:hover {
+.product-card button:hover,
+.checkout-button:hover {
     background: var(--accent-dark);
+}
+
+.product-card button:disabled,
+.checkout-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
 }
 
 .section {
@@ -316,7 +328,8 @@ select:focus {
 
 .freight-result,
 .cart-empty,
-.cart-items {
+.cart-items,
+.cart-message {
     color: var(--muted);
     line-height: 1.5;
 }
@@ -335,6 +348,15 @@ select:focus {
     color: var(--forest);
     font-size: 20px;
     font-weight: 900;
+}
+
+.checkout-button {
+    width: 100%;
+}
+
+.cart-message {
+    min-height: 22px;
+    font-size: 14px;
 }
 
 .management-section {
