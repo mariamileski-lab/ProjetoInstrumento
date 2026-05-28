@@ -8,6 +8,7 @@ const connection = require('../config/database');
 const { jwtSecret } = require('../config/auth');
 const instrumentosControllers = require('../controllers/InstrumentosControllers');
 const instrumentosMidd = require('../middlewares/instrumentosMidd');
+const { requireAdmin } = instrumentosMidd;
 const AppError = require('../errors/AppError');
 const {
     validar,
@@ -21,7 +22,7 @@ const {
     cepParam
 } = require('../middlewares/validations');
 
-router.post('/usuarios', validar(usuario), async (req, res, next) => {
+router.post('/usuarios', instrumentosMidd, requireAdmin, validar(usuario), async (req, res, next) => {
     const { nome, email, senha, tipo_usuario } = req.body;
 
     try {
@@ -53,7 +54,7 @@ router.post('/usuarios', validar(usuario), async (req, res, next) => {
     }
 });
 
-router.get('/usuarios', instrumentosMidd, (req, res, next) => {
+router.get('/usuarios', instrumentosMidd, requireAdmin, (req, res, next) => {
     const sql = 'SELECT id_usuario, nome, email, tipo_usuario FROM usuarios ORDER BY id_usuario DESC';
 
     connection.query(sql, (err, results) => {
@@ -112,7 +113,7 @@ router.get('/categorias', (req, res, next) => {
     });
 });
 
-router.post('/categorias', instrumentosMidd, validar(categoria), (req, res, next) => {
+router.post('/categorias', instrumentosMidd, requireAdmin, validar(categoria), (req, res, next) => {
     const { nome } = req.body;
     const sql = 'INSERT INTO categorias (nome) VALUES (?)';
 
@@ -128,7 +129,7 @@ router.post('/categorias', instrumentosMidd, validar(categoria), (req, res, next
     });
 });
 
-router.put('/categorias/:id', instrumentosMidd, validar(idParam), validar(categoria), (req, res, next) => {
+router.put('/categorias/:id', instrumentosMidd, requireAdmin, validar(idParam), validar(categoria), (req, res, next) => {
     const { nome } = req.body;
     const sql = 'UPDATE categorias SET nome = ? WHERE id_categoria = ?';
 
@@ -148,7 +149,7 @@ router.put('/categorias/:id', instrumentosMidd, validar(idParam), validar(catego
     });
 });
 
-router.delete('/categorias/:id', instrumentosMidd, validar(idParam), (req, res, next) => {
+router.delete('/categorias/:id', instrumentosMidd, requireAdmin, validar(idParam), (req, res, next) => {
     const sql = 'DELETE FROM categorias WHERE id_categoria = ?';
 
     connection.query(sql, [req.params.id], (err, result) => {
@@ -171,22 +172,22 @@ router.get('/instrumentos/buscar', instrumentosControllers.buscarProdutos.bind(i
 router.get('/instrumentos/frete/:cep', validar(cepParam), instrumentosControllers.calcularFrete.bind(instrumentosControllers));
 router.post('/instrumentos/:id/comprar', instrumentosMidd, validar(idParam), validar(compra), instrumentosControllers.comprarProduto.bind(instrumentosControllers));
 router.get('/instrumentos/:id', validar(idParam), instrumentosControllers.buscarPorId.bind(instrumentosControllers));
-router.post('/instrumentos', instrumentosMidd, validar(instrumento), instrumentosControllers.criar.bind(instrumentosControllers));
-router.put('/instrumentos/:id', instrumentosMidd, validar(idParam), validar(instrumento), instrumentosControllers.atualizar.bind(instrumentosControllers));
-router.delete('/instrumentos/:id', instrumentosMidd, validar(idParam), instrumentosControllers.deletar.bind(instrumentosControllers));
+router.post('/instrumentos', instrumentosMidd, requireAdmin, validar(instrumento), instrumentosControllers.criar.bind(instrumentosControllers));
+router.put('/instrumentos/:id', instrumentosMidd, requireAdmin, validar(idParam), validar(instrumento), instrumentosControllers.atualizar.bind(instrumentosControllers));
+router.delete('/instrumentos/:id', instrumentosMidd, requireAdmin, validar(idParam), instrumentosControllers.deletar.bind(instrumentosControllers));
 
 router.get('/produtos', instrumentosControllers.listar.bind(instrumentosControllers));
 router.get('/produtos/buscar', instrumentosControllers.buscarProdutos.bind(instrumentosControllers));
 router.get('/produtos/frete/:cep', validar(cepParam), instrumentosControllers.calcularFrete.bind(instrumentosControllers));
 router.post('/produtos/:id/comprar', instrumentosMidd, validar(idParam), validar(compra), instrumentosControllers.comprarProduto.bind(instrumentosControllers));
 router.get('/produtos/:id', validar(idParam), instrumentosControllers.buscarPorId.bind(instrumentosControllers));
-router.post('/produtos', instrumentosMidd, validar(instrumento), instrumentosControllers.criar.bind(instrumentosControllers));
-router.put('/produtos/:id', instrumentosMidd, validar(idParam), validar(instrumento), instrumentosControllers.atualizar.bind(instrumentosControllers));
-router.delete('/produtos/:id', instrumentosMidd, validar(idParam), instrumentosControllers.deletar.bind(instrumentosControllers));
+router.post('/produtos', instrumentosMidd, requireAdmin, validar(instrumento), instrumentosControllers.criar.bind(instrumentosControllers));
+router.put('/produtos/:id', instrumentosMidd, requireAdmin, validar(idParam), validar(instrumento), instrumentosControllers.atualizar.bind(instrumentosControllers));
+router.delete('/produtos/:id', instrumentosMidd, requireAdmin, validar(idParam), instrumentosControllers.deletar.bind(instrumentosControllers));
 
-router.get('/compras', instrumentosMidd, instrumentosControllers.listarCompras.bind(instrumentosControllers));
-router.put('/compras/:id/aprovar', instrumentosMidd, validar(idParam), instrumentosControllers.aprovarCompra.bind(instrumentosControllers));
-router.put('/compras/:id/reprovar', instrumentosMidd, validar(idParam), instrumentosControllers.reprovarCompra.bind(instrumentosControllers));
-router.post('/emails/teste', instrumentosMidd, validar(emailTeste), instrumentosControllers.enviarEmailTeste.bind(instrumentosControllers));
+router.get('/compras', instrumentosMidd, requireAdmin, instrumentosControllers.listarCompras.bind(instrumentosControllers));
+router.put('/compras/:id/aprovar', instrumentosMidd, requireAdmin, validar(idParam), instrumentosControllers.aprovarCompra.bind(instrumentosControllers));
+router.put('/compras/:id/reprovar', instrumentosMidd, requireAdmin, validar(idParam), instrumentosControllers.reprovarCompra.bind(instrumentosControllers));
+router.post('/emails/teste', instrumentosMidd, requireAdmin, validar(emailTeste), instrumentosControllers.enviarEmailTeste.bind(instrumentosControllers));
 
 module.exports = router;

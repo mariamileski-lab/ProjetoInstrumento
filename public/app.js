@@ -111,11 +111,8 @@ function isAdminLogged() {
 }
 
 function clearProtectedData() {
-    productGrid.innerHTML = '<article class="loading-card">Entre como admin para visualizar os produtos.</article>';
     usersTable.innerHTML = '<tr><td colspan="4">Entre como admin para carregar os usuarios.</td></tr>';
     salesTable.innerHTML = '<tr><td colspan="6">Entre como admin para carregar as vendas.</td></tr>';
-    cart = [];
-    renderCart();
 }
 
 function formatCurrency(value) {
@@ -501,7 +498,7 @@ loginForm.addEventListener('submit', async (event) => {
             localStorage.removeItem('lojaToken');
             updateSessionStatus();
             clearProtectedData();
-            throw new Error('Apenas usuarios admin podem visualizar as informacoes.');
+            throw new Error('Apenas usuarios admin podem visualizar a area administrativa.');
         }
 
         localStorage.setItem('lojaToken', token);
@@ -528,9 +525,7 @@ userForm.addEventListener('submit', async (event) => {
     try {
         const response = await fetch('/usuarios', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: authHeaders(),
             body: JSON.stringify({
                 nome: document.getElementById('userName').value,
                 email: document.getElementById('userEmail').value,
@@ -557,8 +552,9 @@ loadSalesButton.addEventListener('click', loadSales);
 checkoutButton.addEventListener('click', checkoutCart);
 
 updateSessionStatus();
+loadProducts();
+
 if (isAdminLogged()) {
-    loadProducts();
     loadUsers();
     loadSales();
 } else {

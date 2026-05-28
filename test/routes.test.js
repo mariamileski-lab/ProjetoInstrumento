@@ -18,6 +18,10 @@ function tokenValido() {
     return jwt.sign({ id: 1, tipo: 'admin' }, jwtSecret, { expiresIn: '1h' });
 }
 
+function tokenCliente() {
+    return jwt.sign({ id: 2, tipo: 'cliente' }, jwtSecret, { expiresIn: '1h' });
+}
+
 function request({ method = 'GET', path, body, token }) {
     const server = app.listen(0);
     const { port } = server.address();
@@ -76,6 +80,7 @@ test('POST /usuarios valida payload obrigatorio antes de acessar o banco', async
     const response = await request({
         method: 'POST',
         path: '/usuarios',
+        token: tokenValido(),
         body: {
             nome: 'Maria'
         }
@@ -85,6 +90,21 @@ test('POST /usuarios valida payload obrigatorio antes de acessar o banco', async
     assert.equal(response.body.error.message, 'Dados de entrada invalidos');
     assert.equal(response.body.error.status, 400);
     assert.ok(response.body.error.details.some((detail) => detail.campo === 'email'));
+});
+
+test('rotas administrativas rejeitam token de cliente', async () => {
+    const response = await request({
+        path: '/compras',
+        token: tokenCliente()
+    });
+
+    assert.equal(response.status, 403);
+    assert.deepEqual(response.body, {
+        error: {
+            message: 'Acesso permitido apenas para admin',
+            status: 403
+        }
+    });
 });
 
 test('POST /login rejeita email em formato invalido', async () => {

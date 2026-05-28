@@ -21,4 +21,13 @@ function instrumentosMidd(req, res, next) {
     }
 }
 
+function requireAdmin(req, res, next) {
+    if (req.user?.tipo !== 'admin') {
+        return next(new AppError('Acesso permitido apenas para admin', 403));
+    }
+
+    next();
+}
+
 module.exports = instrumentosMidd;
+module.exports.requireAdmin = requireAdmin;
